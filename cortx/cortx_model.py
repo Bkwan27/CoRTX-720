@@ -7,7 +7,7 @@ from utils import drop_feature
 
 
 class contrast_generator(nn.Module):
-    def __init__(self, predict_model, column_data, mean_value_data, index_to_data, device='cuda:2'):
+    def __init__(self, predict_model, column_data, mean_value_data, index_to_data, device='cuda:0'):
         super(contrast_generator, self).__init__()
         self.predict_model = predict_model
         self.column_data = column_data
@@ -58,7 +58,7 @@ class contrast_generator(nn.Module):
         best_pos = np.stack([ x[rank_pos_list[idx]] for idx, x in enumerate(train) ])
         return best_pos
 
-
+# creating the mlp model based on the input parameters
 class tab_mlp(nn.Module):
     def __init__(self, input_dim, output_dim, class_num=2, layer_num=1, hidden_dim=64, activation=None):
         super(tab_mlp, self).__init__()

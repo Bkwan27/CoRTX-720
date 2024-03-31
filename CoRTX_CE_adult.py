@@ -101,14 +101,14 @@ def main(args):
     use_cuda = True
     if use_cuda and torch.cuda.is_available():
         print('cuda ready...')
-        device = 'cuda:3'
+        device = 'cuda:0'
 
 
     ###################
     # Load predictive model
     ###################
     model_checkpoint_fname = "./adult/adult_autoint_model.pth"
-    predict_model = torch.load(model_checkpoint_fname)
+    predict_model = torch.load(model_checkpoint_fname, map_location=torch.device('cuda:0'))
 
 
     ###################
@@ -166,6 +166,7 @@ def main(args):
     contrast_gen = contrast_generator(predict_model, column_data,
                                       mean_value_data, index_to_data,
                                       device)
+    # loss is graph to graph with InfoNCE loss
     ccontras_loss = DualBranchContrast(loss=L.InfoNCE(tau=temper), mode='G2G')
     optimizer = torch.optim.Adam(model.parameters(), lr=5e-3, weight_decay=1e-10)
 
@@ -179,7 +180,7 @@ def main(args):
         # pretrain loading
         if args.pretrain:
             print(" ===== Start to use prtrain =====")
-            checkpoint = torch.load('./adult/weight/RANK_model_adult_CoRTX_0.25.pth.tar')
+            checkpoint = torch.load('./adult/weight/RANK_model_adult_CoRTX_0.25.pth.tar', map_location=torch.device('cuda:0'))
             model = checkpoint["pred_model"]
             protocal_model = checkpoint["head_linear_model"]
             best_acc, best_std = evaluation_ce( model, protocal_model, test_loader,

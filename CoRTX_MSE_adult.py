@@ -18,11 +18,12 @@ from cortx.shap_evaluation import evaluation_mse
 from contrastive.contrastive_model import DualBranchContrast
 import contrastive.infonce as L
 
-
+# reads labels and data from files (tensor or pandas pickle df) to be used to train the model
 class ProtocalDatagenerator(Dataset):
     def __init__(self, x_filename, y_filename, head_propor, device='cuda'):
         self.head_propor = head_propor
         self.data = self.read_pd_file(x_filename)
+        # these are the explanation labels
         self.label = self.read_tesnor_file(y_filename)
         self.data = self.data.to(device)
         self.label = self.label.to(device)
@@ -48,7 +49,7 @@ class ProtocalDatagenerator(Dataset):
         propor_data = data[:propor_train_len]
         return torch.tensor(np.array(propor_data)).type(torch.float).detach().cpu()
 
-
+# custom dataset class made for indexing
 class Datagenerator(Dataset):
     def __init__(self, x_filename_dict, device='cuda'):
         self.device = device
@@ -62,7 +63,7 @@ class Datagenerator(Dataset):
     def __len__(self):
         return len(self.data_emb_list)
 
-
+# data generating for testing or evaluating purposes
 class TestDatagenerator(Dataset):
     def __init__(self, x_filename, y_rank_filename, y_value_filename, device='cuda'):
         self.data = self.read_pd_file(x_filename)
@@ -99,17 +100,18 @@ def main(args):
     best_l2 = 1.0
     best_ste_l2 = 0.0
     device = 'cpu'
-    use_cuda = True
+    use_cuda = False
     if use_cuda and torch.cuda.is_available():
         print('cuda ready...')
-        device = 'cuda:3'
+        device = 'cuda:0'
 
 
     ###################
     # Load predictive model
     ###################
     model_checkpoint_fname = "./adult/adult_autoint_model.pth"
-    predict_model = torch.load(model_checkpoint_fname)
+    # added map location to configure it to right device
+    predict_model = torch.load(model_checkpoint_fname, map_location=torch.device('cuda:0'))
 
 
     ###################
@@ -157,14 +159,16 @@ def main(args):
     temper = args.temper
     n_epochs = args.exp_epoch
 
+    # using a simple 3 layer mlp with relu to do the encoding of the images
     model = tab_mlp(input_dim=len(column_data), output_dim=256,
                     class_num=len(column_data), layer_num=3, hidden_dim=256,
                     activation="torch.relu")
     model.to(device)
-    contrast_gen = contrast_generator(predict_model, column_data,
+    contrast_gen = contrast_generator(predict_model, column_data, # look into contrast_generator
                                       mean_value_data, index_to_data,
                                       device)
-    ccontras_loss = DualBranchContrast(loss=L.InfoNCE(tau=temper), mode='G2G')
+    # InfoNCE is used for the loss here
+    ccontras_loss = DualBranchContrast(loss=L.InfoNCE(tau=temper), mode='G2G') # has contrast loss based on l1 and l2 to help train encoder
     optimizer = torch.optim.Adam(model.parameters(), lr=5e-3)
     print(model)
 

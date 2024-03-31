@@ -1,3 +1,7 @@
+'''
+These are the contrastive model losses that can be used
+'''
+
 import torch
 import numpy as np
 import torch.nn.functional as F

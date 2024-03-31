@@ -108,7 +108,7 @@ def evaluation_ce(model, head_model, test_loader, head_propor, best_acc, best_st
     print("Rank ACC: %f | Std Rank ACC: %6f \n" % (float(mAP), float(std_mAP)))
     return best_acc, best_std
 
-
+# computes mAP for predicted rankings compared to ground truth rankings
 def _acc_rank(rank_pred, rank_shap):
     feature_num = rank_shap.shape[1]
     rank_pred = rank_pred.cpu().reshape(-1, feature_num, feature_num).argmax(axis=2)
@@ -117,7 +117,7 @@ def _acc_rank(rank_pred, rank_shap):
     rank_mAP = torch.sum((rank_pred == rank_shap).type(torch.float)*mAP_weight, dim=1)/mAP_weight.sum()
     return torch.mean(rank_mAP), sem(rank_mAP)
 
-
+# compute the l2 distance between prediction and ground truth
 def _l2_dist_attr(rank_pred, rank_shap):
     rank_pred = rank_pred.cpu().detach().numpy()
     rank_shap = rank_shap.cpu().detach().numpy()
